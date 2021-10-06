@@ -1,0 +1,23 @@
+language: generic
+sudo: required
+services:
+    - docker
+
+before_install:
+    - docker build -t damon/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+    - docker run -e CI=true damon/react-test npm test
+
+after_success:
+    - docker build -t damon/multi-client ./client
+    - docker build -t damon/multi-nginx ./nginx
+    - docker build -t damon/multi-server ./server
+    - docker build -t damon/multi-worker ./worker
+    # Log in to the docker CLI
+    - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+    # Takes those images and push them to docker hub
+    - docker push damon/multi-client
+    - docker push damon/multi-nginx
+    - docker push damon/multi-server
+    - docker push damon/multi-worker
